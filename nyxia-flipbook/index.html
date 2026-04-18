@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NyXia Flipbook — Expérience de Lecture Immersive</title>
+  <meta name="description" content="NyXia Flipbook — Un flipbook ultra design avec effets naturels, loupe, TTS français et protection avancée">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/flipbook.css">
+  
+  <!-- Meta tags pour embed -->
+  <meta property="og:title" content="NyXia Flipbook">
+  <meta property="og:description" content="Expérience de lecture immersive avec design galactique">
+  <meta property="og:type" content="website">
+</head>
+<body class="nx-ambient">
+  <!-- Canvas étoilé en arrière-plan -->
+  <canvas id="starry-canvas"></canvas>
+  
+  <!-- Container principal -->
+  <div class="flipbook-container">
+    
+    <!-- Indicateur TTS -->
+    <div class="tts-indicator paused">
+      <div class="tts-wave">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <span class="tts-status">En pause</span>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="flipbook-toolbar">
+      <button class="tool-btn tool-magnifier" title="Loupe (Alt+Clic)">
+        🔍
+      </button>
+      <button class="tool-btn tool-tts" title="Lecture vocale">
+        🔊
+      </button>
+      <button class="tool-btn tool-share" title="Partager & Embed">
+        📤
+      </button>
+    </div>
+    
+    <!-- Flipbook -->
+    <div class="flipbook">
+      <!-- Les pages seront générées par JS -->
+    </div>
+    
+    <!-- Contrôles de navigation -->
+    <div class="flipbook-controls">
+      <button class="nav-btn nav-prev" title="Page précédente">
+        ‹
+      </button>
+      <span class="page-indicator">1 / 6</span>
+      <button class="nav-btn nav-next" title="Page suivante">
+        ›
+      </button>
+    </div>
+    
+  </div>
+  
+  <!-- Loupe overlay -->
+  <div class="magnifier-overlay">
+    <div class="magnifier-content"></div>
+  </div>
+  
+  <!-- Protection overlay -->
+  <div class="protection-overlay">
+    <div class="protection-icon">🔒</div>
+    <div class="protection-message">Protection activée</div>
+  </div>
+  
+  <!-- Modal de partage -->
+  <div class="share-modal">
+    <button class="close-modal" title="Fermer">✕</button>
+    <h3>Partager & Intégrer</h3>
+    
+    <div class="share-options">
+      <div class="share-option" data-share="facebook">
+        <div class="share-option-label">
+          <span>📘</span>
+          <span>Facebook</span>
+        </div>
+        <div class="share-toggle"></div>
+      </div>
+      
+      <div class="share-option" data-share="twitter">
+        <div class="share-option-label">
+          <span>🐦</span>
+          <span>Twitter / X</span>
+        </div>
+        <div class="share-toggle"></div>
+      </div>
+      
+      <div class="share-option" data-share="linkedin">
+        <div class="share-option-label">
+          <span>💼</span>
+          <span>LinkedIn</span>
+        </div>
+        <div class="share-toggle"></div>
+      </div>
+      
+      <div class="share-option" data-share="embed">
+        <div class="share-option-label">
+          <span>🔗</span>
+          <span>Copier le code d'intégration</span>
+        </div>
+        <div class="share-toggle enabled"></div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <label style="display: block; color: var(--t3); font-size: 13px; margin-bottom: 8px;">
+        Code d'intégration (iframe)
+      </label>
+      <textarea class="embed-code" rows="3" readonly></textarea>
+    </div>
+    
+    <div style="margin-top: 24px; display: flex; gap: 10px;">
+      <button class="nx-btn nx-btn-sm" data-share-social="facebook" style="flex: 1;">
+        Facebook
+      </button>
+      <button class="nx-btn nx-btn-sm" data-share-social="twitter" style="flex: 1;">
+        Twitter
+      </button>
+      <button class="nx-btn nx-btn-sm" data-share-social="linkedin" style="flex: 1;">
+        LinkedIn
+      </button>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="/js/starry-bg.js"></script>
+  <script src="/js/flipbook.js"></script>
+</body>
+</html>
