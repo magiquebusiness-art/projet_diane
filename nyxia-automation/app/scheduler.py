@@ -254,10 +254,26 @@ class Scheduler:
     async def get_campaign_stats(self, campaign_id: int) -> dict:
         """Obtient les statistiques d'une campagne"""
         async with self.async_session() as session:
+            # Récupérer la campagne
+            result = await session.execute(
+                select(Campaign).where(Campaign.id == campaign_id)
+            )
+            campaign = result.scalar_one_or_none()
+            
+            if not campaign:
+                return {"error": "Campagne non trouvée"}
+            
+            # Récupérer les items de contenu
             result = await session.execute(
                 select(ContentItem).where(ContentItem.campaign_id == campaign_id)
             )
             items = result.scalars().all()
+            
+            # Récupérer les pages connectées
+            result = await session.execute(
+                select(SocialPage).where(SocialPage.campaign_id == campaign_id)
+            )
+            pages = result.scalars().all()
             
             total = len(items)
             published = sum(1 for item in items if item.is_published)
@@ -266,11 +282,27 @@ class Scheduler:
             reels = sum(1 for item in items if item.content_type == ContentType.REEL)
             images = sum(1 for item in items if item.content_type == ContentType.IMAGE)
             
+            # Formater les pages pour la réponse
+            pages_data = [
+                {
+                    "id": page.id,
+                    "platform": page.platform.value,
+                    "page_id": page.page_id,
+                    "page_name": page.page_name,
+                    "is_active": page.is_active
+                }
+                for page in pages
+            ]
+            
             return {
                 "total": total,
                 "published": published,
                 "pending": pending,
                 "reels": reels,
                 "images": images,
-                "progress": round((published / total * 100) if total > 0 else 0, 2)
+                "progress": round((published / total * 100) if total > 0 else 0, 2),
+                "pages": pages_data,
+                "campaign_title": campaign.title,
+                "posts_per_day_reels": campaign.posts_per_day_reels,
+                "posts_per_day_images": campaign.posts_per_day_images
             }
