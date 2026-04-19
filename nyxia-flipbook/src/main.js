@@ -1,10 +1,11 @@
 /**
  * NyXia - Flipbook Creator
- * Main Application Logic
+ * Main Application Logic avec FlipEngine (drag souris temps réel)
  */
 
 import { PDFDocument, rgb } from 'pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
+import { FlipEngine } from './engine/FlipEngine.js'
 
 // Set up PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.375/pdf.worker.min.js'
@@ -19,6 +20,7 @@ let passwordProtected = false
 let socialShareEnabled = true
 let currentPDFData = null
 let flipbookId = null
+let flipEngine = null
 
 // DOM Elements
 const uploadArea = document.getElementById('uploadArea')
@@ -27,7 +29,7 @@ const uploadBtn = document.getElementById('uploadBtn')
 const viewerSection = document.getElementById('viewerSection')
 const previewInfo = document.getElementById('previewInfo')
 const fileName = document.getElementById('fileName')
-const flipbook = document.getElementById('flipbook')
+const flipbookContainer = document.getElementById('flipbook')
 const pageIndicator = document.getElementById('pageIndicator')
 const prevPageBtn = document.getElementById('prevPage')
 const nextPageBtn = document.getElementById('nextPage')
@@ -141,10 +143,20 @@ async function handlePDFUpload(file) {
 }
 
 async function renderFlipbook() {
-  flipbook.innerHTML = ''
+  flipbookContainer.innerHTML = ''
   
-  const pageWidth = flipbook.clientWidth / 2
-  const pageHeight = flipbook.clientHeight
+  // Initialiser le FlipEngine avec drag souris temps réel
+  flipEngine = new FlipEngine(flipbookContainer, {
+    pageWidth: 600,
+    pageHeight: 800,
+    duration: 600,
+    enableSound: flipSoundEnabled
+  })
+  
+  // Charger toutes les pages du PDF comme images
+  const pageImages = []
+  const pageWidth = flipbookContainer.clientWidth / 2
+  const pageHeight = flipbookContainer.clientHeight
   
   for (let i = 1; i <= totalPages; i++) {
     const page = await pdfDoc.getPage(i)
@@ -164,58 +176,32 @@ async function renderFlipbook() {
     
     await page.render(renderContext).promise
     
-    const pageDiv = document.createElement('div')
-    pageDiv.className = 'flipbook-page'
-    pageDiv.dataset.pageNum = i
-    
-    if (i % 2 === 0) {
-      pageDiv.classList.add('left')
-      pageDiv.style.transform = 'rotateY(-180deg)'
-      pageDiv.style.zIndex = totalPages - i
-    } else {
-      pageDiv.classList.add('right')
-      pageDiv.style.zIndex = i
-    }
-    
-    pageDiv.appendChild(canvas)
-    flipbook.appendChild(pageDiv)
-    
-    // Add click handler for page turning
-    pageDiv.addEventListener('click', () => {
-      if (i % 2 !== 0 && currentPage === i) {
-        turnPage('next')
-      } else if (i % 2 === 0 && currentPage === i + 1) {
-        turnPage('prev')
-      }
-    })
+    // Convertir le canvas en image pour FlipEngine
+    const img = new Image()
+    img.src = canvas.toDataURL('image/png')
+    await new Promise(resolve => { img.onload = resolve })
+    pageImages.push(img)
+  }
+  
+  // Charger les pages dans le moteur de flip
+  flipEngine.loadPages(pageImages)
+  
+  // Callback quand la page change
+  flipEngine.onPageChanged = (newPage) => {
+    currentPage = newPage + 1
+    updatePageIndicator()
   }
   
   updatePageIndicator()
 }
 
 function turnPage(direction) {
-  const pages = document.querySelectorAll('.flipbook-page')
+  if (!flipEngine) return
   
   if (direction === 'next' && currentPage < totalPages) {
-    const currentPageEl = pages[currentPage - 1]
-    if (currentPageEl) {
-      playFlipSound()
-      currentPageEl.classList.add('flipped')
-      currentPageEl.style.transform = 'rotateY(-180deg)'
-      currentPageEl.style.zIndex = totalPages - currentPage + 1
-      currentPage++
-      updatePageIndicator()
-    }
+    flipEngine.flipToPage(currentPage, true)
   } else if (direction === 'prev' && currentPage > 1) {
-    const prevPageEl = pages[currentPage - 2]
-    if (prevPageEl) {
-      playFlipSound()
-      prevPageEl.classList.remove('flipped')
-      prevPageEl.style.transform = 'rotateY(0deg)'
-      prevPageEl.style.zIndex = currentPage - 1
-      currentPage--
-      updatePageIndicator()
-    }
+    flipEngine.flipToPage(currentPage - 2, false)
   }
 }
 
@@ -334,12 +320,17 @@ let currentZoom = 1
 
 function openMagnifier() {
   const magnifierView = document.getElementById('magnifierView')
-  const currentPageEl = document.querySelector(`.flipbook-page[data-page-num="${currentPage}"]`)
   
-  if (currentPageEl) {
-    const canvas = currentPageEl.querySelector('canvas')
-    if (canvas) {
-      const clonedCanvas = canvas.cloneNode(true)
+  if (flipEngine && flipEngine.pages[currentPage - 1]) {
+    const pageImage = flipEngine.pages[currentPage - 1].image
+    
+    if (pageImage) {
+      const clonedCanvas = document.createElement('canvas')
+      clonedCanvas.width = pageImage.width
+      clonedCanvas.height = pageImage.height
+      const ctx = clonedCanvas.getContext('2d')
+      ctx.drawImage(pageImage, 0, 0)
+      
       clonedCanvas.style.transform = `scale(${currentZoom})`
       clonedCanvas.style.cursor = 'move'
       
@@ -401,27 +392,42 @@ document.getElementById('ttsBtn').addEventListener('click', async () => {
   }
   
   try {
-    const page = await pdfDoc.getPage(currentPage)
-    const textContent = await page.getTextContent()
-    const text = textContent.items.map(item => item.str).join(' ')
-    
-    if (text.trim()) {
-      ttsUtterance = new SpeechSynthesisUtterance(text)
-      ttsUtterance.lang = 'fr-FR'
-      ttsUtterance.rate = 0.9
-      ttsUtterance.pitch = 1
+    // Utiliser le canvas de la page courante depuis flipEngine
+    if (flipEngine && flipEngine.pages[currentPage - 1]) {
+      const pageImage = flipEngine.pages[currentPage - 1].image
       
-      ttsUtterance.onend = () => {
-        ttsSpeaking = false
-        document.getElementById('ttsBtn').textContent = '🔊'
+      // Créer un canvas temporaire pour l'OCR
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = pageImage.width
+      tempCanvas.height = pageImage.height
+      const ctx = tempCanvas.getContext('2d')
+      ctx.drawImage(pageImage, 0, 0)
+      
+      // Extraire le texte via PDF.js directement
+      const page = await pdfDoc.getPage(currentPage)
+      const textContent = await page.getTextContent()
+      const text = textContent.items.map(item => item.str).join(' ')
+      
+      if (text.trim()) {
+        ttsUtterance = new SpeechSynthesisUtterance(text)
+        ttsUtterance.lang = 'fr-FR'
+        ttsUtterance.rate = 0.9
+        ttsUtterance.pitch = 1
+        
+        ttsUtterance.onend = () => {
+          ttsSpeaking = false
+          document.getElementById('ttsBtn').textContent = '🔊'
+        }
+        
+        speechSynthesis.speak(ttsUtterance)
+        ttsSpeaking = true
+        document.getElementById('ttsBtn').textContent = '⏹️'
+        showToast('Lecture en cours...')
+      } else {
+        showToast('Aucun texte détecté sur cette page')
       }
-      
-      speechSynthesis.speak(ttsUtterance)
-      ttsSpeaking = true
-      document.getElementById('ttsBtn').textContent = '⏹️'
-      showToast('Lecture en cours...')
     } else {
-      showToast('Aucun texte détecté sur cette page')
+      showToast('Page non disponible')
     }
   } catch (error) {
     console.error('TTS Error:', error)

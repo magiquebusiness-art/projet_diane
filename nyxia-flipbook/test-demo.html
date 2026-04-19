@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NyXia Flipbook - Démo Drag & Drop</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0A1628;
+      color: white;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      background: linear-gradient(135deg, #7B5CFF, #4FA3FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    
+    .demo-container {
+      width: 900px;
+      height: 600px;
+      background: rgba(10, 22, 40, 0.8);
+      border: 1px solid rgba(123, 92, 255, 0.2);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .instructions {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(79, 163, 255, 0.1);
+      border-radius: 8px;
+      max-width: 900px;
+    }
+    
+    .instructions ul {
+      margin-left: 1.5rem;
+    }
+    
+    .instructions li {
+      margin: 0.5rem 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <h1>🌌 NyXia Flipbook - Moteur de Drag Souris Temps Réel</h1>
+  
+  <div class="demo-container" id="flipbookContainer"></div>
+  
+  <div class="instructions">
+    <h3>Fonctionnalités du moteur de flip :</h3>
+    <ul>
+      <li><strong>Drag souris temps réel :</strong> La page suit exactement votre curseur</li>
+      <li><strong>Courbure canvas dynamique :</strong> Effet de pli 3D réaliste pendant le drag</li>
+      <li><strong>Annulation intelligente :</strong> Relâchez pour retourner à la page si le drag est insuffisant</li>
+      <li><strong>Support tactile :</strong> Fonctionne aussi sur mobile/tablette</li>
+      <li><strong>Son au flip :</strong> Effet audio réaliste quand la page se tourne</li>
+      <li><strong>Ombres et lighting :</strong> Rendu 3D avec ombres portées dynamiques</li>
+    </ul>
+    <p style="margin-top: 1rem; color: #F4C842;">
+      👉 Essayez de cliquer-glisser sur le bord droit des pages pour tourner vers l'avant,<br/>
+      ou sur le bord gauche pour revenir en arrière. La page suit votre mouvement !
+    </p>
+  </div>
+
+  <script type="module">
+    import { FlipEngine } from './src/engine/FlipEngine.js';
+    
+    // Créer des pages de démo avec des couleurs dégradées
+    function createDemoPages() {
+      const pages = [];
+      const colors = [
+        ['#7B5CFF', '#4FA3FF'],
+        ['#4FA3FF', '#7B5CFF'],
+        ['#F4C842', '#FFD700'],
+        ['#0B1F3A', '#0A1628'],
+        ['#7B5CFF', '#0B1F3A'],
+        ['#4FA3FF', '#F4C842']
+      ];
+      
+      colors.forEach((gradient, index) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        
+        // Gradient de fond
+        const grad = ctx.createLinearGradient(0, 0, 400, 600);
+        grad.addColorStop(0, gradient[0]);
+        grad.addColorStop(1, gradient[1]);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 400, 600);
+        
+        // Numéro de page
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 120px Cormorant, serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 20;
+        ctx.fillText(`Page ${index + 1}`, 200, 300);
+        
+        // Effet d'étoiles
+        for (let i = 0; i < 50; i++) {
+          const x = Math.random() * 400;
+          const y = Math.random() * 600;
+          const radius = Math.random() * 2 + 0.5;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.8 + 0.2})`;
+          ctx.fill();
+        }
+        
+        const img = new Image();
+        img.src = canvas.toDataURL();
+        pages.push(img);
+      });
+      
+      return pages;
+    }
+    
+    // Initialiser le FlipEngine
+    const container = document.getElementById('flipbookContainer');
+    const flipEngine = new FlipEngine(container, {
+      pageWidth: 400,
+      pageHeight: 600,
+      duration: 600,
+      enableSound: true
+    });
+    
+    // Charger les pages de démo
+    const demoPages = createDemoPages();
+    flipEngine.loadPages(demoPages);
+    
+    // Callback page changée
+    flipEngine.onPageChanged = (page) => {
+      console.log('Page changée:', page + 1);
+    };
+  </script>
+</body>
+</html>
