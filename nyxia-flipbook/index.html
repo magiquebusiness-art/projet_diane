@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NyXia - Flipbook Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <canvas id="starry-canvas"></canvas>
+  
+  <div class="app-container nx-glass">
+    <header class="header">
+      <h1 class="logo nx-float">NyXia</h1>
+      <p class="tagline nx-fade-up">Intelligence + Mystère + Maîtrise</p>
+    </header>
+
+    <main class="main-content">
+      <!-- Upload Section -->
+      <section class="upload-section nx-glass nx-fade-up">
+        <h2 class="section-title">Créer un Flipbook</h2>
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="pdfInput" accept=".pdf" hidden />
+          <div class="upload-icon nx-breathe">📄</div>
+          <p class="upload-text">Glissez-déposez votre PDF ici</p>
+          <p class="upload-subtext">ou cliquez pour parcourir</p>
+          <button class="btn btn-primary nx-breathe" id="uploadBtn">Sélectionner un PDF</button>
+        </div>
+        <div class="preview-info" id="previewInfo" style="display: none;">
+          <p class="file-name" id="fileName"></p>
+          <p class="processing-text nx-breathe">Conversion en cours...</p>
+        </div>
+      </section>
+
+      <!-- Flipbook Viewer Section -->
+      <section class="viewer-section nx-glass nx-fade-up" id="viewerSection" style="display: none;">
+        <div class="viewer-header">
+          <h2 class="viewer-title">Votre Flipbook</h2>
+          <div class="viewer-controls">
+            <button class="btn btn-icon" id="magnifierBtn" title="Loupe">🔍</button>
+            <button class="btn btn-icon" id="ttsBtn" title="Text-to-Speech FR">🔊</button>
+            <button class="btn btn-icon" id="shareBtn" title="Partager">📤</button>
+            <button class="btn btn-icon" id="settingsBtn" title="Paramètres">⚙️</button>
+          </div>
+        </div>
+        
+        <div class="flipbook-container" id="flipbookContainer">
+          <div class="flipbook" id="flipbook">
+            <!-- Pages will be rendered here -->
+          </div>
+        </div>
+
+        <div class="page-navigation">
+          <button class="btn btn-nav" id="prevPage">◀ Page précédente</button>
+          <span class="page-indicator" id="pageIndicator">1 / 1</span>
+          <button class="btn btn-nav" id="nextPage">Page suivante ▶</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Share Modal -->
+    <div class="modal nx-glass" id="shareModal" style="display: none;">
+      <div class="modal-content nx-fade-up">
+        <button class="modal-close" id="closeShareModal">&times;</button>
+        <h3 class="modal-title">Partager & Intégrer</h3>
+        
+        <div class="modal-section">
+          <label class="toggle-label">
+            <span>Partager sur les réseaux sociaux</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="socialShareToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+
+        <div class="modal-section">
+          <label class="toggle-label">
+            <span>Protection par mot de passe</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="passwordProtectToggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <input type="password" id="passwordInput" placeholder="Mot de passe" class="input-field" style="display: none;" />
+        </div>
+
+        <div class="modal-section">
+          <h4>Code d'intégration (iframe)</h4>
+          <textarea id="embedCode" class="embed-code" readonly></textarea>
+          <button class="btn btn-secondary" id="copyEmbedCode">Copier le code</button>
+        </div>
+
+        <div class="modal-section social-buttons" id="socialButtons">
+          <button class="btn btn-social" data-platform="facebook">Facebook</button>
+          <button class="btn btn-social" data-platform="twitter">Twitter</button>
+          <button class="btn btn-social" data-platform="linkedin">LinkedIn</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magnifier Modal -->
+    <div class="modal nx-glass" id="magnifierModal" style="display: none;">
+      <div class="modal-content nx-fade-up magnifier-content">
+        <button class="modal-close" id="closeMagnifier">&times;</button>
+        <h3 class="modal-title">Loupe d'agrandissement</h3>
+        <div class="magnifier-view" id="magnifierView"></div>
+        <div class="magnifier-controls">
+          <button class="btn btn-nav" id="zoomIn">+ Zoom avant</button>
+          <button class="btn btn-nav" id="zoomOut">- Zoom arrière</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal nx-glass" id="settingsModal" style="display: none;">
+      <div class="modal-content nx-fade-up">
+        <button class="modal-close" id="closeSettingsModal">&times;</button>
+        <h3 class="modal-title">Paramètres du Flipbook</h3>
+        
+        <div class="modal-section">
+          <label class="toggle-label">
+            <span>Activer le son des pages</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="soundToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+
+        <div class="modal-section">
+          <label class="toggle-label">
+            <span>Vitesse d'animation</span>
+          </label>
+          <select id="animationSpeed" class="input-field">
+            <option value="slow">Lente</option>
+            <option value="normal" selected>Normale</option>
+            <option value="fast">Rapide</option>
+          </select>
+        </div>
+
+        <div class="modal-section">
+          <label class="toggle-label">
+            <span>Qualité d'affichage</span>
+          </label>
+          <select id="displayQuality" class="input-field">
+            <option value="low">Basse</option>
+            <option value="medium" selected>Moyenne</option>
+            <option value="high">Haute</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast nx-toast-in" id="toast" style="display: none;">
+      <span id="toastMessage"></span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script src="/src/utils/starry-bg.js"></script>
+</body>
+</html>
